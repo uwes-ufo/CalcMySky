@@ -17,6 +17,10 @@ if(MSVC)
 endif()
 include(cmake/CheckGLM.cmake)
 
+if(WIN32)
+    include_directories(SYSTEM ${GLM_INCLUDE_DIR})
+endif()
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
@@ -72,10 +76,12 @@ install(DIRECTORY "${CMAKE_SOURCE_DIR}/shaders" DESTINATION "${shadersDestPath}"
 # The first command is a dummy, it doesn't actually create its output: it's
 # only needed to force re-running of version.sh for the case when we've changed
 # the version but didn't touch other dependencies.
+if(NOT WIN32)
 add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/check version update" COMMAND true)
 add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/version.cpp"
                    DEPENDS "${CMAKE_BINARY_DIR}/check version update"
                    COMMAND "${CMAKE_SOURCE_DIR}/version.sh" "${staticProjectVersion}" "${CMAKE_SOURCE_DIR}/version.cpp.in" "${CMAKE_BINARY_DIR}/version.cpp")
+endif()
 add_library(version STATIC "${CMAKE_BINARY_DIR}/version.cpp")
 add_library(common STATIC
              common/EclipsedDoubleScatteringPrecomputer.cpp
