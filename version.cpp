@@ -1,3 +1,3 @@
 #include "config.h"
 
-const char*const PROJECT_VERSION = "v0.0.5";
+const char*const PROJECT_VERSION = "v0.0.6";
