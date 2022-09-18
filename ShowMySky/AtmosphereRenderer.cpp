@@ -1371,14 +1371,14 @@ double AtmosphereRenderer::cameraMoonDistance() const
 QVector4D AtmosphereRenderer::getPixelLuminance(QPoint const& pixelPos)
 {
     GLint origFBO=-1;
-    gl.glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &origFBO);
+    gl.glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &origFBO);
 
-    gl.glBindFramebuffer(GL_FRAMEBUFFER, luminanceRadianceFBO_);
+    gl.glBindFramebuffer(GL_READ_FRAMEBUFFER, luminanceRadianceFBO_);
     gl.glReadBuffer(GL_COLOR_ATTACHMENT0);
     glm::vec4 pixel;
     gl.glReadPixels(pixelPos.x(), viewportSize_.height()-pixelPos.y()-1, 1,1, GL_RGBA, GL_FLOAT, &pixel[0]);
 
-    gl.glBindFramebuffer(GL_FRAMEBUFFER, origFBO);
+    gl.glBindFramebuffer(GL_READ_FRAMEBUFFER, origFBO);
 
     return toQVector(pixel);
 }
@@ -2002,7 +2002,7 @@ void AtmosphereRenderer::draw(const double brightness, const bool clear)
     gl.glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &targetFBO);
 
     {
-        gl.glBindFramebuffer(GL_FRAMEBUFFER,luminanceRadianceFBO_);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER,luminanceRadianceFBO_);
         if(canGrabRadiance())
         {
             prepareRadianceFrames(clear);
@@ -2028,7 +2028,7 @@ void AtmosphereRenderer::draw(const double brightness, const bool clear)
         }
         gl.glDisablei(GL_BLEND, 0);
 
-        gl.glBindFramebuffer(GL_FRAMEBUFFER,targetFBO);
+        gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER,targetFBO);
     }
 }
 
@@ -2234,12 +2234,20 @@ void AtmosphereRenderer::resizeEvent(const int width, const int height)
     viewportSize_=QSize(width,height);
     if(!luminanceRadianceFBO_) return;
 
+    GLint origFBO=-1;
+    gl.glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &origFBO);
+    gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER,luminanceRadianceFBO_);
+
+    GLint origTex=-1;
+    gl.glGetIntegerv(GL_TEXTURE_BINDING_2D, &origTex);
     luminanceRenderTargetTexture_.bind();
+
     gl.glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32F,width,height,0,GL_RGBA,GL_UNSIGNED_BYTE,nullptr);
-    gl.glBindFramebuffer(GL_FRAMEBUFFER,luminanceRadianceFBO_);
     gl.glFramebufferTexture(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,luminanceRenderTargetTexture_.textureId(),0);
     checkFramebufferStatus(gl, "Atmosphere renderer FBO");
-    gl.glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+    gl.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, origFBO);
+    gl.glBindTexture(GL_TEXTURE_2D, origTex);
 
     if(!radianceRenderBuffers_.empty())
     {
