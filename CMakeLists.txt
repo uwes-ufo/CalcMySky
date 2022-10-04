@@ -123,5 +123,5 @@ add_subdirectory(CalcMySky)
 add_subdirectory(ShowMySky)
 add_subdirectory(doc)
 
-enable_testing()
-add_subdirectory(tests)
+#enable_testing()
+#add_subdirectory(tests)
