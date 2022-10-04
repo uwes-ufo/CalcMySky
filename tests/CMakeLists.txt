@@ -1,3 +1,5 @@
+add_definitions(-D_USE_MATH_DEFINES)
+
 add_executable(test-Spectrum test-Spectrum.cpp ../common/Spectrum.cpp)
 target_link_libraries(test-Spectrum Qt${QT_VERSION}::Core Qt${QT_VERSION}::OpenGL)
 foreach(testNum RANGE 1 4)
