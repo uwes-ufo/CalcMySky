@@ -166,13 +166,14 @@ void AtmosphereRenderer::loadEclipsedDoubleScatteringTexture(QString const& path
 
 void AtmosphereRenderer::loadTexture4D(QString const& path, const float altitudeCoord, Texture4DType texType)
 {
+  try
+  {
     auto log=qDebug().nospace();
 
     if(const auto err=gl.glGetError(); err!=GL_NO_ERROR)
     {
-	/*throw*/const auto error=DataLoadError{QObject::tr("GL error on entry to loadTexture4D(\"%1\"): %2")
+	throw DataLoadError{QObject::tr("GL error on entry to loadTexture4D(\"%1\"): %2")
                             .arg(path).arg(openglErrorString(err).c_str())};
-	    qDebug() << err << "~>" << error.errorType() << error.what();
     }
     log << "Loading texture from " << path << "... ";
     QFile file(path);
@@ -260,6 +261,11 @@ void AtmosphereRenderer::loadTexture4D(QString const& path, const float altitude
     }
 
     log << "done";
+  }
+  catch(DataLoadError &ex)
+  {
+	qDebug() << ex.errorType() << ex.what();
+  }
 }
 
 glm::ivec2 AtmosphereRenderer::loadTexture2D(QString const& path)
