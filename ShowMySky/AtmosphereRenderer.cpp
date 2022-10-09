@@ -170,8 +170,9 @@ void AtmosphereRenderer::loadTexture4D(QString const& path, const float altitude
 
     if(const auto err=gl.glGetError(); err!=GL_NO_ERROR)
     {
-        throw DataLoadError{QObject::tr("GL error on entry to loadTexture4D(\"%1\"): %2")
+	/*throw*/const auto error=DataLoadError{QObject::tr("GL error on entry to loadTexture4D(\"%1\"): %2")
                             .arg(path).arg(openglErrorString(err).c_str())};
+	    qDebug() << err << "~>" << error.errorType() << error.what();
     }
     log << "Loading texture from " << path << "... ";
     QFile file(path);
