@@ -139,6 +139,7 @@ private: // variables
 private: // methods
     DEFINE_EXPLICIT_BOOL(CountStepsOnly);
     void loadTextures(CountStepsOnly countStepsOnly);
+    void queryOpenglError(QString text);
     void reloadScatteringTextures(CountStepsOnly countStepsOnly);
     void setupRenderTarget();
     void loadShaders(CountStepsOnly countStepsOnly);

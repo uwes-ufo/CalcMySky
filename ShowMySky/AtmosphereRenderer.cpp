@@ -14,7 +14,9 @@
 #include <QRegularExpression>
 
 #include "util.hpp"
+#ifndef WIN32
 #include "../common/const.hpp"
+#endif
 #include "../common/util.hpp"
 #include "../common/EclipsedDoubleScatteringPrecomputer.hpp"
 #include "api/ShowMySky/Settings.hpp"
@@ -74,12 +76,12 @@ void AtmosphereRenderer::loadEclipsedDoubleScatteringTexture(QString const& path
     if(const auto err=gl.glGetError(); err!=GL_NO_ERROR)
     {
         throw DataLoadError{QObject::tr("GL error on entry to loadEclipsedDoubleScatteringTexture(\"%1\"): %2")
-                            .arg(path).arg(openglErrorString(err).c_str())};
+			    .arg(path,0).arg(openglErrorString(err).c_str())};
     }
     log << "Loading texture from " << path << "... ";
     QFile file(path);
     if(!file.open(QFile::ReadOnly))
-        throw DataLoadError{QObject::tr("Failed to open file \"%1\": %2").arg(path).arg(file.errorString())};
+	throw DataLoadError{QObject::tr("Failed to open file \"%1\": %2").arg(path,0).arg(file.errorString())};
 
     uint16_t numPointsPerSet;
     {
@@ -87,7 +89,7 @@ void AtmosphereRenderer::loadEclipsedDoubleScatteringTexture(QString const& path
         if(file.read(reinterpret_cast<char*>(&numPointsPerSet), sizeToRead) != sizeToRead)
         {
             throw DataLoadError{QObject::tr("Failed to read header from file \"%1\": %2")
-                                .arg(path).arg(file.errorString())};
+				.arg(path,0).arg(file.errorString())};
         }
     }
     const auto texSizeByViewAzimuth = params_.eclipsedDoubleScatteringTextureSize[0];
@@ -110,14 +112,14 @@ void AtmosphereRenderer::loadEclipsedDoubleScatteringTexture(QString const& path
     if(!file.seek(absoluteOffset))
     {
         throw DataLoadError{QObject::tr("Failed to seek to offset %1 in file \"%2\": %3")
-            .arg(absoluteOffset).arg(path).arg(file.errorString())};
+	    .arg(absoluteOffset).arg(path,0).arg(file.errorString())};
     }
 
     const qint64 sizeToRead = data.size()*sizeof data[0];
     if(file.read(reinterpret_cast<char*>(data.data()), sizeToRead) != sizeToRead)
     {
         throw DataLoadError{QObject::tr("Failed to read data from file \"%1\": %2")
-            .arg(path).arg(file.errorString())};
+	    .arg(path,0).arg(file.errorString())};
     }
 
     size_t readOffset = 0;
@@ -158,7 +160,7 @@ void AtmosphereRenderer::loadEclipsedDoubleScatteringTexture(QString const& path
     if(const auto err=gl.glGetError(); err!=GL_NO_ERROR)
     {
         throw DataLoadError{QObject::tr("GL error in loadEclipsedDoubleScatteringTexture(\"%1\") after glTexImage3D() call: %2")
-                            .arg(path).arg(openglErrorString(err).c_str())};
+			    .arg(path,0).arg(openglErrorString(err).c_str())};
     }
 
     log << "done";
@@ -166,19 +168,17 @@ void AtmosphereRenderer::loadEclipsedDoubleScatteringTexture(QString const& path
 
 void AtmosphereRenderer::loadTexture4D(QString const& path, const float altitudeCoord, Texture4DType texType)
 {
-  try
-  {
     auto log=qDebug().nospace();
 
     if(const auto err=gl.glGetError(); err!=GL_NO_ERROR)
     {
         throw DataLoadError{QObject::tr("GL error on entry to loadTexture4D(\"%1\"): %2")
-                            .arg(path).arg(openglErrorString(err).c_str())};
+			    .arg(path,0).arg(openglErrorString(err).c_str())};
     }
     log << "Loading texture from " << path << "... ";
     QFile file(path);
     if(!file.open(QFile::ReadOnly))
-        throw DataLoadError{QObject::tr("Failed to open file \"%1\": %2").arg(path).arg(file.errorString())};
+	throw DataLoadError{QObject::tr("Failed to open file \"%1\": %2").arg(path,0).arg(file.errorString())};
 
     uint16_t sizes[4];
     {
@@ -186,7 +186,7 @@ void AtmosphereRenderer::loadTexture4D(QString const& path, const float altitude
         if(file.read(reinterpret_cast<char*>(sizes), sizeToRead) != sizeToRead)
         {
             throw DataLoadError{QObject::tr("Failed to read header from file \"%1\": %2")
-                                .arg(path).arg(file.errorString())};
+				.arg(path,0).arg(file.errorString())};
         }
     }
     log << "dimensions from header: " << sizes[0] << "×" << sizes[1] << "×" << sizes[2] << "×" << sizes[3] << "... ";
@@ -198,7 +198,7 @@ void AtmosphereRenderer::loadTexture4D(QString const& path, const float altitude
     if(expectedFileSize != file.size())
     {
         throw DataLoadError{QObject::tr("Size of file \"%1\" (%2 bytes) doesn't match image dimensions %3×%4×%5×%6 from file header.\nThe expected size is %7 bytes.")
-                            .arg(path).arg(file.size()).arg(sizes[0]).arg(sizes[1]).arg(sizes[2]).arg(sizes[3]).arg(expectedFileSize)};
+			    .arg(path,0).arg(file.size()).arg(sizes[0]).arg(sizes[1]).arg(sizes[2]).arg(sizes[3]).arg(expectedFileSize)};
     }
 
     numAltIntervalsIn4DTexture_ = sizes[3]-1;
@@ -217,13 +217,13 @@ void AtmosphereRenderer::loadTexture4D(QString const& path, const float altitude
     if(!file.seek(absoluteOffset))
     {
         throw DataLoadError{QObject::tr("Failed to seek to offset %1 in file \"%2\": %3")
-                            .arg(absoluteOffset).arg(path).arg(file.errorString())};
+			    .arg(absoluteOffset).arg(path,0).arg(file.errorString())};
     }
     const auto actuallyRead=file.read(data.get(), sizeToRead);
     if(actuallyRead != sizeToRead)
     {
-        const auto error = actuallyRead==-1 ? QObject::tr("Failed to read texture data from file \"%1\": %2").arg(path).arg(file.errorString())
-                                            : QObject::tr("Failed to read texture data from file \"%1\": requested %2 bytes, read %3").arg(path).arg(sizeToRead).arg(actuallyRead);
+	const auto error = actuallyRead==-1 ? QObject::tr("Failed to read texture data from file \"%1\": %2").arg(path,0).arg(file.errorString())
+					    : QObject::tr("Failed to read texture data from file \"%1\": requested %2 bytes, read %3").arg(path,0).arg(sizeToRead).arg(actuallyRead);
         throw DataLoadError{error};
     }
 
@@ -257,15 +257,10 @@ void AtmosphereRenderer::loadTexture4D(QString const& path, const float altitude
     if(const auto err=gl.glGetError(); err!=GL_NO_ERROR)
     {
         throw DataLoadError{QObject::tr("GL error in loadTexture4D(\"%1\") after glTexImage3D() call: %2")
-                            .arg(path).arg(openglErrorString(err).c_str())};
+			    .arg(path,0).arg(openglErrorString(err).c_str())};
     }
 
     log << "done";
-  }
-  catch(DataLoadError &ex)
-  {
-	qDebug() << ex.errorType() << ex.what();
-  }
 }
 
 glm::ivec2 AtmosphereRenderer::loadTexture2D(QString const& path)
@@ -275,12 +270,12 @@ glm::ivec2 AtmosphereRenderer::loadTexture2D(QString const& path)
     if(const auto err=gl.glGetError(); err!=GL_NO_ERROR)
     {
         throw DataLoadError{QObject::tr("GL error on entry to loadTexture2D(\"%1\"): %2")
-                            .arg(path).arg(openglErrorString(err).c_str())};
+			    .arg(path,0).arg(openglErrorString(err).c_str())};
     }
     log << "Loading texture from " << path << "... ";
     QFile file(path);
     if(!file.open(QFile::ReadOnly))
-        throw DataLoadError{QObject::tr("Failed to open file \"%1\": %2").arg(path).arg(file.errorString())};
+	throw DataLoadError{QObject::tr("Failed to open file \"%1\": %2").arg(path,0).arg(file.errorString())};
 
     uint16_t sizes[2];
     {
@@ -288,7 +283,7 @@ glm::ivec2 AtmosphereRenderer::loadTexture2D(QString const& path)
         if(file.read(reinterpret_cast<char*>(sizes), sizeToRead) != sizeToRead)
         {
             throw DataLoadError{QObject::tr("Failed to read header from file \"%1\": %2")
-                                .arg(path).arg(file.errorString())};
+				.arg(path,0).arg(file.errorString())};
         }
     }
     const auto subpixelCount = 4*uint64_t(sizes[0])*sizes[1];
@@ -298,7 +293,7 @@ glm::ivec2 AtmosphereRenderer::loadTexture2D(QString const& path)
        expectedFileSize != file.size())
     {
         throw DataLoadError{QObject::tr("Size of file \"%1\" (%2 bytes) doesn't match image dimensions %3×%4 from file header.\nThe expected size is %5 bytes.")
-                            .arg(path).arg(file.size()).arg(sizes[0]).arg(sizes[1]).arg(expectedFileSize)};
+			    .arg(path,0).arg(file.size()).arg(sizes[0]).arg(sizes[1]).arg(expectedFileSize)};
     }
 
     const std::unique_ptr<GLfloat[]> subpixels(new GLfloat[subpixelCount]);
@@ -307,8 +302,8 @@ glm::ivec2 AtmosphereRenderer::loadTexture2D(QString const& path)
         const auto actuallyRead=file.read(reinterpret_cast<char*>(subpixels.get()), sizeToRead);
         if(actuallyRead != sizeToRead)
         {
-            const auto error = actuallyRead==-1 ? QObject::tr("Failed to read texture data from file \"%1\": %2").arg(path).arg(file.errorString())
-                                                : QObject::tr("Failed to read texture data from file \"%1\": requested %2 bytes, read %3").arg(path).arg(sizeToRead).arg(actuallyRead);
+	    const auto error = actuallyRead==-1 ? QObject::tr("Failed to read texture data from file \"%1\": %2").arg(path,0).arg(file.errorString())
+						: QObject::tr("Failed to read texture data from file \"%1\": requested %2 bytes, read %3").arg(path,0).arg(sizeToRead).arg(actuallyRead);
             throw DataLoadError{error};
         }
     }
@@ -316,7 +311,7 @@ glm::ivec2 AtmosphereRenderer::loadTexture2D(QString const& path)
     if(const auto err=gl.glGetError(); err!=GL_NO_ERROR)
     {
         throw DataLoadError{QObject::tr("GL error in loadTexture2D(\"%1\") after glTexImage2D() call: %2")
-                            .arg(path).arg(openglErrorString(err).c_str())};
+			    .arg(path,0).arg(openglErrorString(err).c_str())};
     }
     log << "done";
     return {sizes[0], sizes[1]};
@@ -381,6 +376,12 @@ double AtmosphereRenderer::altitudeUnitRangeTexCoord() const
     return std::sqrt(h*(h+2*R) / ( H*(H+2*R) ));
 }
 
+void AtmosphereRenderer::queryOpenglError(QString text)
+{
+	if(const auto err=gl.glGetError(); err!=GL_NO_ERROR)
+		qDebug() << text << "~>" << openglErrorString(err).c_str();
+}
+
 void AtmosphereRenderer::reloadScatteringTextures(const CountStepsOnly countStepsOnly)
 {
     const auto texFilter = tools_->textureFilteringEnabled() ? QOpenGLTexture::Linear : QOpenGLTexture::Nearest;
@@ -392,8 +393,8 @@ void AtmosphereRenderer::reloadScatteringTextures(const CountStepsOnly countStep
     }
     else if(++currentLoadingIterationStepCounter_ > loadingStepsDone_)
     {
-        multipleScatteringTextures_.clear();
-        ++loadingStepsDone_; return;
+	multipleScatteringTextures_.clear();
+	++loadingStepsDone_; return;
     }
     if(const auto filename=pathToData_+"/multiple-scattering-xyzw.f32"; QFile::exists(filename))
     {
@@ -401,16 +402,16 @@ void AtmosphereRenderer::reloadScatteringTextures(const CountStepsOnly countStep
         {
             ++totalLoadingStepsToDo_;
         }
-        else if(++currentLoadingIterationStepCounter_ > loadingStepsDone_)
-        {
-            auto& tex=*multipleScatteringTextures_.emplace_back(newTex(QOpenGLTexture::Target3D));
-            tex.setMinificationFilter(texFilter);
-            tex.setMagnificationFilter(texFilter);
-            tex.setWrapMode(QOpenGLTexture::ClampToEdge);
-            tex.bind();
-            loadTexture4D(filename, altCoord);
-            ++loadingStepsDone_; return;
-        }
+	else if(++currentLoadingIterationStepCounter_ > loadingStepsDone_)
+	{
+	    auto& tex=*multipleScatteringTextures_.emplace_back(newTex(QOpenGLTexture::Target3D));
+	    tex.setMinificationFilter(texFilter);
+	    tex.setMagnificationFilter(texFilter);
+	    tex.setWrapMode(QOpenGLTexture::ClampToEdge);
+	    tex.bind();
+	    loadTexture4D(filename, altCoord);
+	    ++loadingStepsDone_; return;
+	}
     }
     else
     {
@@ -556,11 +557,11 @@ void AtmosphereRenderer::reloadScatteringTextures(const CountStepsOnly countStep
                 texture.setMagnificationFilter(texFilter);
                 texture.setWrapMode(QOpenGLTexture::ClampToEdge);
                 texture.bind();
-                loadTexture4D(QString("%1/single-scattering/%2-xyzw.f32").arg(pathToData_).arg(scatterer.name), altCoord);
+		loadTexture4D(QString("%1/single-scattering/%2-xyzw.f32").arg(pathToData_,0).arg(scatterer.name), altCoord);
                 ++loadingStepsDone_; return;
             }
 
-            const auto guidesFilename01 = QString("%1/single-scattering/%2-xyzw-dims01.guides2d").arg(pathToData_).arg(scatterer.name);
+	    const auto guidesFilename01 = QString("%1/single-scattering/%2-xyzw-dims01.guides2d").arg(pathToData_,0).arg(scatterer.name);
             if(QFile::exists(guidesFilename01))
             {
                 if(countStepsOnly)
@@ -579,7 +580,7 @@ void AtmosphereRenderer::reloadScatteringTextures(const CountStepsOnly countStep
                     ++loadingStepsDone_; return;
                 }
             }
-            const auto guidesFilename02 = QString("%1/single-scattering/%2-xyzw-dims02.guides2d").arg(pathToData_).arg(scatterer.name);
+	    const auto guidesFilename02 = QString("%1/single-scattering/%2-xyzw-dims02.guides2d").arg(pathToData_,0).arg(scatterer.name);
             if(QFile::exists(guidesFilename02))
             {
                 if(countStepsOnly)
@@ -818,7 +819,7 @@ void AtmosphereRenderer::loadShaders(const CountStepsOnly countStepsOnly)
                     if(++currentLoadingIterationStepCounter_ <= loadingStepsDone_)
                         continue;
 
-                    const auto scatDir=QString("%1/shaders/single-scattering/%2/%3/%4").arg(pathToData_)
+		    const auto scatDir=QString("%1/shaders/single-scattering/%2/%3/%4").arg(pathToData_,0)
                                                                                        .arg(singleScatteringRenderModeNames[renderMode])
                                                                                        .arg(wlSetIndex)
                                                                                        .arg(scatterer.name);
@@ -847,8 +848,8 @@ void AtmosphereRenderer::loadShaders(const CountStepsOnly countStepsOnly)
                 if(++currentLoadingIterationStepCounter_ <= loadingStepsDone_)
                     continue;
 
-                const auto scatDir=QString("%1/shaders/single-scattering/%2/%3").arg(pathToData_)
-                                                                                .arg(singleScatteringRenderModeNames[renderMode])
+		const auto scatDir=QString("%1/shaders/single-scattering/%2/%3").arg(pathToData_,0)
+										.arg(singleScatteringRenderModeNames[renderMode],0)
                                                                                 .arg(scatterer.name);
                 qDebug().nospace() << "Loading shaders from " << scatDir << "...";
                 auto& program=*programs.emplace_back(std::make_unique<QOpenGLShaderProgram>());
@@ -902,7 +903,7 @@ void AtmosphereRenderer::loadShaders(const CountStepsOnly countStepsOnly)
                     if(++currentLoadingIterationStepCounter_ <= loadingStepsDone_)
                         continue;
 
-                    const auto scatDir=QString("%1/shaders/single-scattering-eclipsed/%2/%3/%4").arg(pathToData_)
+		    const auto scatDir=QString("%1/shaders/single-scattering-eclipsed/%2/%3/%4").arg(pathToData_,0)
                                                                                                 .arg(singleScatteringRenderModeNames[renderMode])
                                                                                                 .arg(wlSetIndex)
                                                                                                 .arg(scatterer.name);
@@ -931,8 +932,8 @@ void AtmosphereRenderer::loadShaders(const CountStepsOnly countStepsOnly)
                 if(++currentLoadingIterationStepCounter_ <= loadingStepsDone_)
                     continue;
 
-                const auto scatDir=QString("%1/shaders/single-scattering-eclipsed/%2/%3").arg(pathToData_)
-                                                                                            .arg(singleScatteringRenderModeNames[renderMode])
+		const auto scatDir=QString("%1/shaders/single-scattering-eclipsed/%2/%3").arg(pathToData_,0)
+											    .arg(singleScatteringRenderModeNames[renderMode],0)
                                                                                             .arg(scatterer.name);
                 qDebug().nospace() << "Loading shaders from " << scatDir << "...";
                 auto& program=*programs.emplace_back(std::make_unique<QOpenGLShaderProgram>());
@@ -957,7 +958,7 @@ void AtmosphereRenderer::loadShaders(const CountStepsOnly countStepsOnly)
     }
     else if(++currentLoadingIterationStepCounter_ > loadingStepsDone_)
     {
-        static constexpr const char* precomputationProgramsVertShaderSrc=1+R"(
+	static constexpr const char* precomputationProgramsVertShaderSrc=&R"(
 #version 330
 in vec3 vertex;
 out vec3 position;
@@ -966,7 +967,7 @@ void main()
     position=vertex;
     gl_Position=vec4(position,1);
 }
-)";
+)"[1];
         precomputationProgramsVertShader_.reset(new QOpenGLShader(QOpenGLShader::Vertex));
         if(!precomputationProgramsVertShader_->compileSourceCode(precomputationProgramsVertShaderSrc))
             throw DataLoadError{QObject::tr("Failed to compile vertex shader for on-the-fly precomputation of eclipsed scattering:\n%2")
@@ -1243,7 +1244,7 @@ void main()
         program.addShader(viewDirVertShader_.get());
         for(const auto& b : viewDirBindAttribLocations_)
             program.bindAttributeLocation(b.first.c_str(), b.second);
-        addShaderCode(program, QOpenGLShader::Fragment, QObject::tr("fragment shader for view direction getter"), 1+R"(
+	addShaderCode(program, QOpenGLShader::Fragment, QObject::tr("fragment shader for view direction getter"), &R"(
 #version 330
 
 in vec3 position;
@@ -1254,7 +1255,7 @@ void main()
 {
     viewDir=calcViewDir();
 }
-)");
+)"[1]);
         link(program, QObject::tr("view direction getter shader program"));
         ++loadingStepsDone_; return;
     }
@@ -1992,6 +1993,7 @@ auto AtmosphereRenderer::stepPreparationToDraw() -> LoadingStatus
 
 void AtmosphereRenderer::draw(const double brightness, const bool clear)
 {
+    queryOpenglError("start draw");
     OGL_TRACE();
 
     if(const int preparationSteps = initPreparationToDraw(); preparationSteps>0)
