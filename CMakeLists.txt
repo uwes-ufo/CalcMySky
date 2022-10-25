@@ -5,6 +5,7 @@ endif()
 
 set(staticProjectVersion 0.1.0)
 project(CalcMySky VERSION ${staticProjectVersion} LANGUAGES CXX)
+set(CMAKE_FIND_USE_PACKAGE_REGISTRY false)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -15,6 +16,7 @@ endif()
 if(MSVC)
     set(CMAKE_CXX_FLAGS "/wd4267 /wd4305 /wd4244 ${CMAKE_CXX_FLAGS}")
 endif()
+include(cmake/CPM.cmake)
 include(cmake/CheckGLM.cmake)
 
 if(WIN32)
@@ -67,8 +69,17 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     endif()
 endif()
 
-find_package(Eigen3 REQUIRED)
-include_directories(SYSTEM ${EIGEN3_INCLUDE_DIR})
+CPMFindPackage(NAME Eigen3
+	URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
+	URL_HASH SHA256=b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626
+	EXCLUDE_FROM_ALL yes
+	DOWNLOAD_ONLY yes
+	OPTIONS "EIGEN_BUILD_DOC no" "BUILD_TESTING no")
+if(Eigen3_ADDED)
+	# Eigen3's CMakeLists.txt works, but is very heavy
+	add_library(Eigen3::Eigen IMPORTED INTERFACE)
+	target_include_directories(Eigen3::Eigen INTERFACE ${Eigen3_SOURCE_DIR})
+endif()
 include_directories(${CMAKE_BINARY_DIR})
 
 if(WIN32)
@@ -102,13 +113,18 @@ endif()
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/shaders" DESTINATION "${shadersDestPath}")
 
 # The first command is a dummy, it doesn't actually create its output: it's
-# only needed to force re-running of version.sh for the case when we've changed
+# only needed to force re-running of gen_version.cmake for the case when we've changed
 # the version but didn't touch other dependencies.
 if(NOT WIN32)
 add_custom_command(OUTPUT "${PROJECT_BINARY_DIR}/check version update" COMMAND true)
 add_custom_command(OUTPUT "${PROJECT_BINARY_DIR}/version.cpp"
-                   DEPENDS "${PROJECT_BINARY_DIR}/check version update"
-                   COMMAND "${PROJECT_SOURCE_DIR}/version.sh" "${staticProjectVersion}" "${PROJECT_SOURCE_DIR}/version.cpp.in" "${PROJECT_BINARY_DIR}/version.cpp")
+	DEPENDS "${PROJECT_BINARY_DIR}/check version update"
+	WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+	COMMAND "${CMAKE_COMMAND}"
+		-D "staticVersion=${staticProjectVersion}"
+		-D "inputFile=${PROJECT_SOURCE_DIR}/version.cpp.in"
+		-D "outputFile=${PROJECT_BINARY_DIR}/version.cpp"
+		-P "${PROJECT_SOURCE_DIR}/cmake/gen_version.cmake")
 endif()
 add_library(version STATIC "${PROJECT_BINARY_DIR}/version.cpp")
 add_library(common STATIC
@@ -116,12 +132,16 @@ add_library(common STATIC
              common/AtmosphereParameters.cpp
              common/Spectrum.cpp
              common/util.cpp)
-target_link_libraries(common PUBLIC Qt${QT_VERSION}::Core Qt${QT_VERSION}::OpenGL Qt${QT_VERSION}::Widgets)
+target_link_libraries(common PUBLIC Qt${QT_VERSION}::Core
+	Qt${QT_VERSION}::OpenGL Qt${QT_VERSION}::Widgets PRIVATE glm::glm
+	Eigen3::Eigen)
 
 configure_file(config.h.in config.h)
 add_subdirectory(CalcMySky)
 add_subdirectory(ShowMySky)
 add_subdirectory(doc)
 
-enable_testing()
-add_subdirectory(tests)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+	enable_testing()
+	add_subdirectory(tests)
+endif()
